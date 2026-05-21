@@ -91,8 +91,7 @@ export default function HomePage() {
         </div>
 
       </section>
-
-      {/* Advantages */}
+{/* Advantages */}
 
 <section className="py-24 bg-black">
 
@@ -149,8 +148,6 @@ export default function HomePage() {
   </div>
 
 </section>
-
     </main>
   );
 }
-
