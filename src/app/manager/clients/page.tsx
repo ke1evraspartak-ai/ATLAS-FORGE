@@ -743,6 +743,25 @@ export default function ManagerClientsPage() {
                       <div className="text-zinc-500 text-sm">
                         Статус клиента
                       </div>
+                      <div className="mt-5">
+  <div className="text-zinc-500 text-sm mb-3">
+    Ответственный менеджер
+  </div>
+
+  <select
+    value={selectedClient.manager_id || ""}
+    onChange={(e) => updateClient("manager_id", e.target.value)}
+    className="w-full bg-black border border-zinc-700 rounded-xl p-4"
+  >
+    <option value="">Без менеджера</option>
+
+    {managers.map((manager) => (
+      <option key={manager.id} value={manager.id}>
+        {manager.name}
+      </option>
+    ))}
+  </select>
+</div>
 
                       <select
                         value={selectedClient.status || "new"}
