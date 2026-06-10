@@ -1,10 +1,6 @@
 import ManagerNav from "@/components/ManagerNav";
 
-export default function ManagerLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function ManagerNav({ children }: { children?: React.ReactNode }) {
   return (
     <>
       <ManagerNav />
