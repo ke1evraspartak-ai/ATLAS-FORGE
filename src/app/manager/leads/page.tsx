@@ -141,7 +141,12 @@ const currentManager = savedManager ? JSON.parse(savedManager) : null;
         offer.offer_number?.toLowerCase().includes(q)
       : true;
 
-    return matchStatus && matchSearch;
+    const matchesManager =
+  !currentManager?.id ||
+  offer.manager_id === currentManager.id ||
+  !offer.manager_id;
+
+return matchStatus && matchSearch && matchesManager;
   });
 
  const updateOfferStatus = async (id: string, status: string) => {
@@ -334,9 +339,13 @@ const currentManager = savedManager ? JSON.parse(savedManager) : null;
                     </td>
 
                     <td className="p-4">
-  {offer.source === "cart"
-    ? "Корзина"
-    : managers.find((m) => m.id === offer.manager_id)?.name || "Менеджер"}
+  {offer.source === "cart" ? "Корзина" : "Менеджер"}
+
+  {offer.manager_id && (
+    <span className="text-zinc-500">
+      {" "}· {managers.find((m) => m.id === offer.manager_id)?.name || "Менеджер"}
+    </span>
+  )}
 </td>
 
                     <td className="p-4 text-right">
