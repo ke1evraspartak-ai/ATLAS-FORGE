@@ -121,6 +121,7 @@ const [quickTaskStatus, setQuickTaskStatus] = useState("contact");
   const [city, setCity] = useState("");
   const [objectName, setObjectName] = useState("");
   const [managerId, setManagerId] = useState("");
+  const [currentManager, setCurrentManager] = useState<any>(null);
   const [clientId, setClientId] = useState("");
 
   const [deliveryCost, setDeliveryCost] = useState("");
@@ -187,6 +188,18 @@ const [quickTaskStatus, setQuickTaskStatus] = useState("contact");
   useEffect(() => {
     loadData();
   }, []);
+  useEffect(() => {
+  const savedManager = localStorage.getItem("atlas_manager");
+
+  if (!savedManager) {
+    window.location.href = "/manager-login";
+    return;
+  }
+
+  const manager = JSON.parse(savedManager);
+  setCurrentManager(manager);
+  setManagerId(manager.id);
+}, []);
 const addQuickTask = async () => {
   if (!clientId || !quickTaskTitle.trim()) return;
 
@@ -651,7 +664,7 @@ if (clientId) {
     setClientPhone("");
     setCity("");
     setObjectName("");
-    setManagerId("");
+    setManagerId(currentManager?.id || "");
     setDeliveryCost("");
     setInstallationCost("");
     setIncludeServices(false);
@@ -1370,7 +1383,31 @@ if (offer?.client_id) {
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-15">
        
-        <h1 className="text-6xl font-black mt-8">Конструктор КП</h1>
+        <div className="flex flex-wrap items-center justify-between gap-4 mt-8">
+  <div>
+    <h1 className="text-6xl font-black">Конструктор КП</h1>
+
+    {currentManager && (
+      <div className="text-zinc-400 mt-3">
+        Вы вошли как:{" "}
+        <span className="text-orange-500 font-bold">
+          {currentManager.name}
+        </span>
+      </div>
+    )}
+  </div>
+
+  <button
+    onClick={() => {
+      localStorage.removeItem("atlas_manager");
+      document.cookie = "atlas_manager_id=; path=/; max-age=0";
+      window.location.href = "/manager-login";
+    }}
+    className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl px-5 py-3 font-bold"
+  >
+    Выйти
+  </button>
+</div>
 
         <div className="flex flex-wrap items-center gap-4 mt-8">
           <Link
