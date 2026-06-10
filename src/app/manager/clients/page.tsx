@@ -50,7 +50,9 @@ export default function ManagerClientsPage() {
   const [selectedClient, setSelectedClient] = useState<any>(null);
 
   const [search, setSearch] = useState("");
-  const [newComment, setNewComment] = useState("");
+const [clientView, setClientView] = useState("mine");
+const [currentManager, setCurrentManager] = useState<any>(null);
+const [newComment, setNewComment] = useState("");
 
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
@@ -114,6 +116,23 @@ export default function ManagerClientsPage() {
   }, []);
 
   useEffect(() => {
+  const savedManager = localStorage.getItem("atlas_manager");
+
+  if (!savedManager) {
+    window.location.href = "/manager-login";
+    return;
+  }
+
+  try {
+    setCurrentManager(JSON.parse(savedManager));
+  } catch {
+    localStorage.removeItem("atlas_manager");
+    document.cookie = "atlas_manager_id=; path=/; max-age=0";
+    window.location.href = "/manager-login";
+  }
+}, []);
+
+  useEffect(() => {
     if (clients.length === 0) return;
 
     const params = new URLSearchParams(window.location.search);
@@ -131,17 +150,28 @@ export default function ManagerClientsPage() {
   }, [clients]);
 
   const filteredClients = useMemo(() => {
-    const q = search.toLowerCase();
+  const q = search.toLowerCase();
 
-    return clients.filter((client) => {
-      return (
-        client.name?.toLowerCase().includes(q) ||
-        client.phone?.toLowerCase().includes(q) ||
-        client.city?.toLowerCase().includes(q) ||
-        client.object_name?.toLowerCase().includes(q)
-      );
-    });
-  }, [clients, search]);
+  return clients.filter((client) => {
+    const matchesSearch =
+      !q ||
+      client.name?.toLowerCase().includes(q) ||
+      client.phone?.toLowerCase().includes(q) ||
+      client.city?.toLowerCase().includes(q) ||
+      client.object_name?.toLowerCase().includes(q);
+
+    const matchesManager =
+      clientView === "all"
+        ? true
+        : clientView === "unassigned"
+          ? !client.manager_id
+          : clientView === "mine"
+            ? client.manager_id === currentManager?.id || !client.manager_id
+            : client.manager_id === clientView;
+
+    return matchesSearch && matchesManager;
+  });
+}, [clients, search, clientView, currentManager]);
 
   const clientOffers = offers.filter(
     (offer) => offer.client_id === selectedClient?.id
@@ -265,12 +295,13 @@ export default function ManagerClientsPage() {
     if (!selectedClient || !taskTitle.trim()) return;
 
     const { error } = await supabase.from("client_tasks").insert({
-      client_id: selectedClient.id,
-      title: taskTitle,
-      description: taskDescription,
-      due_date: taskDate || null,
-      status: "contact",
-    });
+  client_id: selectedClient.id,
+  title: taskTitle,
+  description: taskDescription,
+  due_date: taskDate || null,
+  status: "contact",
+  manager_id: selectedClient.manager_id || currentManager?.id || null,
+});
 
     if (error) {
       alert(error.message);
@@ -621,14 +652,30 @@ export default function ManagerClientsPage() {
 
         <div className="grid xl:grid-cols-[340px_1fr] gap-8 mt-12 items-start">
           <aside className="bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden">
-            <div className="p-4 border-b border-zinc-800">
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Поиск клиента"
-                className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-sm"
-              />
-            </div>
+            <div className="p-4 border-b border-zinc-800 space-y-3">
+  <select
+    value={clientView}
+    onChange={(e) => setClientView(e.target.value)}
+    className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-sm"
+  >
+    <option value="mine">Мои + без менеджера</option>
+    <option value="unassigned">Без менеджера</option>
+    <option value="all">Все клиенты</option>
+
+    {managers.map((manager) => (
+      <option key={manager.id} value={manager.id}>
+        {manager.name}
+      </option>
+    ))}
+  </select>
+
+  <input
+    value={search}
+    onChange={(e) => setSearch(e.target.value)}
+    placeholder="Поиск клиента"
+    className="w-full bg-black border border-zinc-700 rounded-xl p-3 text-sm"
+  />
+</div>
 
             <div className="max-h-[75vh] overflow-auto">
               {filteredClients.map((client) => (
@@ -656,6 +703,12 @@ export default function ManagerClientsPage() {
                   <div className="text-zinc-600 mt-1 text-xs">
                     {client.object_name || "Без объекта"}
                   </div>
+
+                  <div className="text-zinc-500 mt-1 text-xs">
+  Менеджер:{" "}
+  {managers.find((manager) => manager.id === client.manager_id)?.name ||
+    "Без менеджера"}
+</div>
 
                   <div
                     className={`inline-flex mt-2 rounded-lg px-3 py-1 text-xs font-bold border ${getClientStatusColor(
