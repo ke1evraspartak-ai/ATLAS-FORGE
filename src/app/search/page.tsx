@@ -173,7 +173,7 @@ export default async function SearchPage({
 
                     <div className="p-6">
                       <p className="text-orange-500 text-xs uppercase tracking-widest">
-                        {product.category}
+                        {product.sku}
                       </p>
 
                       <h3 className="text-2xl font-bold mt-3">
