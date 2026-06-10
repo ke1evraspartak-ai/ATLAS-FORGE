@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -12,6 +12,12 @@ const statusOptions = [
   { value: "implemented", label: "Реализовано" },
   { value: "closed", label: "Закрыто" },
   { value: "draft", label: "Черновик" },
+];
+
+const managerFilterOptions = [
+  { value: "mine", label: "Мои + без менеджера" },
+  { value: "unassigned", label: "Без менеджера" },
+  { value: "all", label: "Все заявки" },
 ];
 
 const getStatusClassName = (status: string) => {
@@ -27,8 +33,22 @@ export default function ManagerLeadsPage() {
   const [offers, setOffers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [managers, setManagers] = useState<any[]>([]);
+  const [currentManager, setCurrentManager] = useState<any>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [managerFilter, setManagerFilter] = useState("mine");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const savedManager = localStorage.getItem("atlas_manager");
+
+    if (savedManager) {
+      try {
+        setCurrentManager(JSON.parse(savedManager));
+      } catch {
+        setCurrentManager(null);
+      }
+    }
+  }, []);
 
   const createTasksForNewCartLeads = async (
     offersData: any[],
@@ -94,9 +114,12 @@ export default function ManagerLeadsPage() {
       .from("client_tasks")
       .select("*")
       .order("due_date", { ascending: true });
-      const { data: managersData } = await supabase
-  .from("managers")
-  .select("*");
+
+    const { data: managersData } = await supabase
+      .from("managers")
+      .select("*")
+      .eq("is_active", true)
+      .order("sort_order");
 
     await createTasksForNewCartLeads(offersData || [], tasksData || []);
 
@@ -106,8 +129,8 @@ export default function ManagerLeadsPage() {
       .order("due_date", { ascending: true });
 
     setOffers(offersData || []);
-setTasks(freshTasksData || tasksData || []);
-setManagers(managersData || []);
+    setTasks(freshTasksData || tasksData || []);
+    setManagers(managersData || []);
   };
 
   useEffect(() => {
@@ -121,53 +144,87 @@ setManagers(managersData || []);
 
   const openTasksCount = tasks.filter((task) => task.status !== "done").length;
 
-  const filteredOffers = offers.filter((offer) => {
-    const q = search.toLowerCase();
+  const filteredOffers = useMemo(() => {
+    return offers.filter((offer) => {
+      const q = search.toLowerCase().trim();
 
-    const savedManager =
-  typeof window !== "undefined"
-    ? localStorage.getItem("atlas_manager")
-    : null;
+      const matchStatus =
+        statusFilter === "all" ? true : offer.status === statusFilter;
 
-const currentManager = savedManager ? JSON.parse(savedManager) : null;
+      const matchSearch = q
+        ? offer.client_name?.toLowerCase().includes(q) ||
+          offer.client_phone?.toLowerCase().includes(q) ||
+          offer.city?.toLowerCase().includes(q) ||
+          offer.offer_number?.toLowerCase().includes(q)
+        : true;
 
-    const matchStatus =
-      statusFilter === "all" ? true : offer.status === statusFilter;
+      let matchManager = true;
 
-    const matchSearch = q
-      ? offer.client_name?.toLowerCase().includes(q) ||
-        offer.client_phone?.toLowerCase().includes(q) ||
-        offer.city?.toLowerCase().includes(q) ||
-        offer.offer_number?.toLowerCase().includes(q)
-      : true;
+      if (managerFilter === "mine") {
+        matchManager =
+          !currentManager?.id ||
+          offer.manager_id === currentManager.id ||
+          !offer.manager_id;
+      } else if (managerFilter === "unassigned") {
+        matchManager = !offer.manager_id;
+      } else if (managerFilter === "all") {
+        matchManager = true;
+      } else {
+        matchManager = offer.manager_id === managerFilter;
+      }
 
-    const matchesManager =
-  !currentManager?.id ||
-  offer.manager_id === currentManager.id ||
-  !offer.manager_id;
+      return matchStatus && matchSearch && matchManager;
+    });
+  }, [offers, search, statusFilter, managerFilter, currentManager]);
 
-return matchStatus && matchSearch && matchesManager;
-  });
-
- const updateOfferStatus = async (id: string, status: string) => {
-  const savedManager = localStorage.getItem("atlas_manager");
-  const currentManager = savedManager ? JSON.parse(savedManager) : null;
-
-  const payload: any = {
-    status,
+  const getManagerName = (managerId: string) => {
+    if (!managerId) return "Без менеджера";
+    return managers.find((manager) => manager.id === managerId)?.name || "Менеджер";
   };
 
-  if (currentManager?.id) {
-    payload.manager_id = currentManager.id;
-  }
+  const getSourceLabel = (source: string) => {
+    if (source === "cart") return "Корзина";
+    if (source === "crm") return "CRM";
+    return "Менеджер";
+  };
 
-  await supabase
-    .from("commercial_offers")
-    .update(payload)
-    .eq("id", id);
+  const updateOfferStatus = async (offer: any, status: string) => {
+    const payload: any = {
+      status,
+    };
 
-  loadData();
-};
+    // Если заявка ещё не закреплена ни за кем, первый менеджер,
+    // который взял её в работу/отправил КП/закрыл, автоматически становится ответственным.
+    if (!offer.manager_id && currentManager?.id && status !== "new" && status !== "draft") {
+      payload.manager_id = currentManager.id;
+    }
+
+    const { error } = await supabase
+      .from("commercial_offers")
+      .update(payload)
+      .eq("id", offer.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    loadData();
+  };
+
+  const updateOfferManager = async (offerId: string, managerId: string) => {
+    const { error } = await supabase
+      .from("commercial_offers")
+      .update({ manager_id: managerId || null })
+      .eq("id", offerId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    loadData();
+  };
 
   const deleteOffer = async (id: string) => {
     if (!confirm("Удалить заявку? Это действие нельзя отменить.")) return;
@@ -199,7 +256,31 @@ return matchStatus && matchSearch && matchesManager;
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-15">
-        <h1 className="text-6xl font-black mt-8">Заявки</h1>
+        <div className="flex flex-wrap items-end justify-between gap-4 mt-8">
+          <div>
+            <h1 className="text-6xl font-black">Заявки</h1>
+
+            {currentManager && (
+              <div className="text-zinc-400 mt-3">
+                Вы вошли как:{" "}
+                <span className="text-orange-500 font-bold">
+                  {currentManager.name}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem("atlas_manager");
+              document.cookie = "atlas_manager_id=; path=/; max-age=0";
+              window.location.href = "/manager-login";
+            }}
+            className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl px-5 py-3 font-bold"
+          >
+            Выйти
+          </button>
+        </div>
 
         <div className="flex flex-wrap items-center gap-4 mt-8">
           <Link
@@ -268,6 +349,24 @@ return matchStatus && matchSearch && matchesManager;
               />
 
               <select
+                value={managerFilter}
+                onChange={(e) => setManagerFilter(e.target.value)}
+                className="bg-black border border-zinc-700 rounded-xl px-4 py-3"
+              >
+                {managerFilterOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+
+                {managers.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="bg-black border border-zinc-700 rounded-xl px-4 py-3"
@@ -282,7 +381,7 @@ return matchStatus && matchSearch && matchesManager;
           </div>
 
           <div className="mt-6 overflow-auto border border-zinc-800 rounded-2xl">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[1320px]">
               <thead className="bg-black text-zinc-400">
                 <tr>
                   <th className="p-4 text-left">Статус</th>
@@ -291,6 +390,7 @@ return matchStatus && matchSearch && matchesManager;
                   <th className="p-4 text-left">Город</th>
                   <th className="p-4 text-left">КП</th>
                   <th className="p-4 text-left">Источник</th>
+                  <th className="p-4 text-left">Менеджер</th>
                   <th className="p-4 text-right">Действие</th>
                 </tr>
               </thead>
@@ -306,11 +406,9 @@ return matchStatus && matchSearch && matchesManager;
                     <td className="p-4">
                       <select
                         value={offer.status || "draft"}
-                        onChange={(e) =>
-                          updateOfferStatus(offer.id, e.target.value)
-                        }
+                        onChange={(e) => updateOfferStatus(offer, e.target.value)}
                         className={`rounded-lg px-3 py-2 font-bold border ${getStatusClassName(
-                          offer.status || "draft"
+                          offer.status || "draft",
                         )}`}
                       >
                         <option value="new">Новая</option>
@@ -339,14 +437,27 @@ return matchStatus && matchSearch && matchesManager;
                     </td>
 
                     <td className="p-4">
-  {offer.source === "cart" ? "Корзина" : "Менеджер"}
+                      {getSourceLabel(offer.source)}
+                    </td>
 
-  {offer.manager_id && (
-    <span className="text-zinc-500">
-      {" "}· {managers.find((m) => m.id === offer.manager_id)?.name || "Менеджер"}
-    </span>
-  )}
-</td>
+                    <td className="p-4">
+                      <select
+                        value={offer.manager_id || ""}
+                        onChange={(e) => updateOfferManager(offer.id, e.target.value)}
+                        className="bg-black border border-zinc-700 rounded-lg px-3 py-2"
+                      >
+                        <option value="">Без менеджера</option>
+                        {managers.map((manager) => (
+                          <option key={manager.id} value={manager.id}>
+                            {manager.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="text-zinc-500 text-xs mt-1">
+                        {getManagerName(offer.manager_id)}
+                      </div>
+                    </td>
 
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">
@@ -379,7 +490,7 @@ return matchStatus && matchSearch && matchesManager;
 
                 {filteredOffers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-zinc-500">
+                    <td colSpan={8} className="p-8 text-center text-zinc-500">
                       Заявок пока нет.
                     </td>
                   </tr>
