@@ -124,6 +124,13 @@ setManagers(managersData || []);
   const filteredOffers = offers.filter((offer) => {
     const q = search.toLowerCase();
 
+    const savedManager =
+  typeof window !== "undefined"
+    ? localStorage.getItem("atlas_manager")
+    : null;
+
+const currentManager = savedManager ? JSON.parse(savedManager) : null;
+
     const matchStatus =
       statusFilter === "all" ? true : offer.status === statusFilter;
 
@@ -137,14 +144,25 @@ setManagers(managersData || []);
     return matchStatus && matchSearch;
   });
 
-  const updateOfferStatus = async (id: string, status: string) => {
-    await supabase
-      .from("commercial_offers")
-      .update({ status })
-      .eq("id", id);
+ const updateOfferStatus = async (id: string, status: string) => {
+  const savedManager = localStorage.getItem("atlas_manager");
+  const currentManager = savedManager ? JSON.parse(savedManager) : null;
 
-    loadData();
+  const payload: any = {
+    status,
   };
+
+  if (currentManager?.id) {
+    payload.manager_id = currentManager.id;
+  }
+
+  await supabase
+    .from("commercial_offers")
+    .update(payload)
+    .eq("id", id);
+
+  loadData();
+};
 
   const deleteOffer = async (id: string) => {
     if (!confirm("Удалить заявку? Это действие нельзя отменить.")) return;
