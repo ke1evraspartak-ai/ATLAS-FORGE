@@ -94,6 +94,7 @@ export default function ManagerPage() {
   const [managers, setManagers] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [savedOffers, setSavedOffers] = useState<any[]>([]);
+  const [savedOfferItems, setSavedOfferItems] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [showRequestsOnly, setShowRequestsOnly] = useState(false);
@@ -164,6 +165,9 @@ const [quickTaskStatus, setQuickTaskStatus] = useState("contact");
       .from("commercial_offers")
       .select("*")
       .order("created_at", { ascending: false });
+      const { data: savedOfferItemsData } = await supabase
+  .from("commercial_offer_items")
+  .select("*");
 
     const { data: tasksData } = await supabase
       .from("client_tasks")
@@ -176,6 +180,7 @@ const [quickTaskStatus, setQuickTaskStatus] = useState("contact");
     setManagers(managersData || []);
     setClients(clientsData || []);
     setSavedOffers(offersData || []);
+    setSavedOfferItems(savedOfferItemsData || []);
     setTasks(tasksData || []);
   };
 
@@ -322,6 +327,37 @@ const addQuickTask = async () => {
   const dashboardRecentRequests = savedOffers
     .filter((offer) => offer.source === "cart")
     .slice(0, 5);
+
+    const getOfferItems = (offerId: string) => {
+  return savedOfferItems.filter((item) => item.offer_id === offerId);
+};
+
+const getOfferTotal = (offerId: string) => {
+  return getOfferItems(offerId).reduce((sum, item) => {
+    return sum + Number(item.custom_price || 0) * Number(item.quantity || 1);
+  }, 0);
+};
+
+const getOfferStatusLabel = (status: string) => {
+  if (status === "new") return "Новая";
+  if (status === "work") return "В работе";
+  if (status === "sent") return "КП отправлено";
+  if (status === "implemented") return "Реализовано";
+  if (status === "closed") return "Закрыто";
+  if (status === "draft") return "Черновик";
+  return "Без статуса";
+};
+
+const getOfferSourceLabel = (source: string) => {
+  if (source === "cart") return "Корзина";
+  if (source === "crm") return "CRM";
+  return "Менеджер";
+};
+
+const formatDate = (value: string) => {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("ru-RU");
+};
 
 
   const baseProductsTotal = items.reduce(
@@ -1504,15 +1540,42 @@ if (offer?.client_id) {
             <div className="mt-5 space-y-3">
               {dashboardRecentOffers.map((offer) => (
                 <button
-                  key={offer.id}
-                  onClick={() => loadOfferById(offer.id)}
-                  className="w-full text-left bg-black border border-zinc-800 hover:border-orange-500 transition rounded-2xl p-4"
-                >
-                  <div className="font-bold text-orange-500">{offer.offer_number}</div>
-                  <div className="text-zinc-500 text-sm mt-1">
-                    {offer.client_name || "Без клиента"} · {offer.city || "Без города"}
-                  </div>
-                </button>
+  key={offer.id}
+  onClick={() => loadOfferById(offer.id)}
+  className="w-full text-left bg-black border border-zinc-800 hover:border-orange-500 transition rounded-2xl p-4"
+>
+  <div className="flex items-center justify-between gap-3">
+    <div className="font-bold text-orange-500">
+      {offer.offer_number || "Без номера"}
+    </div>
+
+    <div className="text-orange-500 font-black">
+      {formatRub(getOfferTotal(offer.id))}
+    </div>
+  </div>
+
+  <div className="text-zinc-500 text-sm mt-1">
+    {offer.client_name || "Без клиента"} · {offer.city || "Без города"}
+  </div>
+
+  <div className="flex flex-wrap gap-2 mt-3 text-xs">
+    <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
+      {getOfferStatusLabel(offer.status)}
+    </span>
+
+    <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
+      {getOfferSourceLabel(offer.source)}
+    </span>
+
+    <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
+      {getOfferItems(offer.id).length} поз.
+    </span>
+
+    <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
+      {formatDate(offer.created_at)}
+    </span>
+  </div>
+</button>
               ))}
 
               {dashboardRecentOffers.length === 0 && (
