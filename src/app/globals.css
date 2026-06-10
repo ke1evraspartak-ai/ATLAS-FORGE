@@ -7,3 +7,25 @@ body {
   background: #111111;
   color: white;
 }
+.product-description table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+}
+
+.product-description td,
+.product-description th {
+  border: 1px solid #3f3f46;
+  padding: 10px 12px;
+}
+
+.product-description p {
+  margin: 12px 0;
+  line-height: 1.7;
+}
+
+.product-description h2,
+.product-description h3 {
+  margin-top: 28px;
+  font-weight: 800;
+}

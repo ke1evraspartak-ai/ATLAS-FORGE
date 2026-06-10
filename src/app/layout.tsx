@@ -1,5 +1,6 @@
 import "./globals.css";
 import Header from "@/components/Header";
+import { CartProvider } from "@/components/CartProvider";
 
 export const metadata = {
   title: "ATLAS FORGE",
@@ -14,11 +15,10 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className="bg-[#111111]">
-
-        <Header />
-
-        {children}
-
+        <CartProvider>
+          <Header />
+          {children}
+        </CartProvider>
       </body>
     </html>
   );
