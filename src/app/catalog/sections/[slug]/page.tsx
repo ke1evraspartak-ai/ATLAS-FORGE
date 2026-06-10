@@ -224,7 +224,7 @@ export default async function SectionPage({
 
   <div className="p-6">
     <p className="text-orange-500 text-xs uppercase tracking-widest">
-      {product.category}
+      {product.sku}
     </p>
 
     <Link href={`/catalog/${product.slug || product.id}`}>
