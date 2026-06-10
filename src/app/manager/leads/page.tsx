@@ -26,6 +26,7 @@ const getStatusClassName = (status: string) => {
 export default function ManagerLeadsPage() {
   const [offers, setOffers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -93,6 +94,9 @@ export default function ManagerLeadsPage() {
       .from("client_tasks")
       .select("*")
       .order("due_date", { ascending: true });
+      const { data: managersData } = await supabase
+  .from("managers")
+  .select("*");
 
     await createTasksForNewCartLeads(offersData || [], tasksData || []);
 
@@ -102,7 +106,8 @@ export default function ManagerLeadsPage() {
       .order("due_date", { ascending: true });
 
     setOffers(offersData || []);
-    setTasks(freshTasksData || tasksData || []);
+setTasks(freshTasksData || tasksData || []);
+setManagers(managersData || []);
   };
 
   useEffect(() => {
@@ -311,8 +316,10 @@ export default function ManagerLeadsPage() {
                     </td>
 
                     <td className="p-4">
-                      {offer.source === "cart" ? "Корзина" : "Менеджер"}
-                    </td>
+  {offer.source === "cart"
+    ? "Корзина"
+    : managers.find((m) => m.id === offer.manager_id)?.name || "Менеджер"}
+</td>
 
                     <td className="p-4 text-right">
                       <div className="flex justify-end gap-2">

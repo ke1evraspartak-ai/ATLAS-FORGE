@@ -361,10 +361,12 @@ const getOfferStatusLabel = (status: string) => {
   return "Без статуса";
 };
 
-const getOfferSourceLabel = (source: string) => {
-  if (source === "cart") return "Корзина";
-  if (source === "crm") return "CRM";
-  return "Менеджер";
+const getOfferSourceLabel = (offer: any) => {
+  if (offer.source === "cart") return "Корзина";
+  if (offer.source === "crm") return "CRM";
+
+  const manager = managers.find((item) => item.id === offer.manager_id);
+  return manager?.name || "Менеджер";
 };
 
 const formatDate = (value: string) => {
@@ -1601,7 +1603,7 @@ if (offer?.client_id) {
     </span>
 
     <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
-      {getOfferSourceLabel(offer.source)}
+      {getOfferSourceLabel(offer)}
     </span>
 
     <span className="bg-zinc-900 border border-zinc-700 rounded-full px-3 py-1">
