@@ -105,9 +105,7 @@ export default function AdminManagersPage() {
       <div className="max-w-7xl mx-auto px-6 py-32">
         <div className="flex flex-wrap justify-between items-center gap-4">
           <div>
-            <div className="text-orange-500 uppercase tracking-[6px] text-sm">
-              ATLAS FORGE CMS
-            </div>
+        
             <Link
   href="/admin/products"
   className="text-zinc-400 hover:text-white transition"

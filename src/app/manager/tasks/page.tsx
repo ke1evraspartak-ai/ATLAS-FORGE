@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 type TaskGroupKey = "overdue" | "today" | "tomorrow" | "future" | "done";
+type TaskView = "mine" | "unassigned" | "all" | string;
 
 const getToday = () => new Date().toISOString().slice(0, 10);
 
@@ -18,6 +19,9 @@ export default function ManagerTasksPage() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
+  const [managers, setManagers] = useState<any[]>([]);
+  const [currentManager, setCurrentManager] = useState<any>(null);
+  const [taskView, setTaskView] = useState<TaskView>("mine");
   const [dragTaskId, setDragTaskId] = useState<string | null>(null);
 
   const loadData = async () => {
@@ -33,50 +37,94 @@ export default function ManagerTasksPage() {
       .select("*")
       .order("created_at", { ascending: false });
 
+    const { data: managersData } = await supabase
+      .from("managers")
+      .select("*")
+      .order("sort_order", { ascending: true });
+
     setTasks(tasksData || []);
     setClients(clientsData || []);
     setOffers(offersData || []);
+    setManagers(managersData || []);
   };
 
   useEffect(() => {
+    const savedManager = localStorage.getItem("atlas_manager");
+
+    if (!savedManager) {
+      window.location.href = "/manager-login";
+      return;
+    }
+
+    try {
+      const manager = JSON.parse(savedManager);
+      setCurrentManager(manager);
+      setTaskView("mine");
+    } catch {
+      localStorage.removeItem("atlas_manager");
+      document.cookie = "atlas_manager_id=; path=/; max-age=0";
+      window.location.href = "/manager-login";
+    }
+
     loadData();
   }, []);
 
   const today = getToday();
   const tomorrow = getTomorrow();
 
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (taskView === "all") return true;
+      if (taskView === "unassigned") return !task.manager_id;
+
+      if (taskView === "mine") {
+        return (
+          !currentManager?.id ||
+          task.manager_id === currentManager.id ||
+          !task.manager_id
+        );
+      }
+
+      return task.manager_id === taskView;
+    });
+  }, [tasks, taskView, currentManager]);
+
   const groups = useMemo(() => {
     return {
-      overdue: tasks.filter(
-        (task) => task.status !== "done" && task.due_date && task.due_date < today
+      overdue: filteredTasks.filter(
+        (task) => task.status !== "done" && task.due_date && task.due_date < today,
       ),
-      today: tasks.filter(
-        (task) => task.status !== "done" && task.due_date === today
+      today: filteredTasks.filter(
+        (task) => task.status !== "done" && task.due_date === today,
       ),
-      tomorrow: tasks.filter(
-        (task) => task.status !== "done" && task.due_date === tomorrow
+      tomorrow: filteredTasks.filter(
+        (task) => task.status !== "done" && task.due_date === tomorrow,
       ),
-      future: tasks.filter(
-        (task) => task.status !== "done" && task.due_date && task.due_date > tomorrow
+      future: filteredTasks.filter(
+        (task) => task.status !== "done" && task.due_date && task.due_date > tomorrow,
       ),
-      done: tasks.filter((task) => task.status === "done"),
+      done: filteredTasks.filter((task) => task.status === "done"),
     };
-  }, [tasks, today, tomorrow]);
+  }, [filteredTasks, today, tomorrow]);
 
-  const openTasksCount = tasks.filter((task) => task.status !== "done").length;
+  const openTasksCount = filteredTasks.filter((task) => task.status !== "done").length;
 
   const newCartLeadsCount = offers.filter(
     (offer) =>
-      offer.source === "cart" && (offer.status === "new" || !offer.status)
+      offer.source === "cart" && (offer.status === "new" || !offer.status),
   ).length;
 
   const getClient = (clientId: string) => {
     return clients.find((client) => client.id === clientId);
   };
 
+  const getManagerName = (managerId: string) => {
+    return managers.find((manager) => manager.id === managerId)?.name || "Без менеджера";
+  };
+
   const updateTask = async (taskId: string, payload: any) => {
     setTasks((prev) =>
-      prev.map((task) => (task.id === taskId ? { ...task, ...payload } : task))
+      prev.map((task) => (task.id === taskId ? { ...task, ...payload } : task)),
     );
 
     const { error } = await supabase
@@ -90,7 +138,15 @@ export default function ManagerTasksPage() {
     }
   };
 
+  const assignTaskToManager = async (taskId: string, managerId: string) => {
+    await updateTask(taskId, {
+      manager_id: managerId || null,
+    });
+  };
+
   const openClient = (clientId: string) => {
+    if (!clientId) return;
+
     localStorage.setItem("openClientId", clientId);
     window.location.href = `/manager/clients?clientId=${clientId}`;
   };
@@ -98,12 +154,19 @@ export default function ManagerTasksPage() {
   const moveTaskToGroup = async (group: TaskGroupKey) => {
     if (!dragTaskId) return;
 
+    const draggedTask = tasks.find((task) => task.id === dragTaskId);
+    const basePayload: any = {};
+
+    if (currentManager?.id && !draggedTask?.manager_id) {
+      basePayload.manager_id = currentManager.id;
+    }
+
     if (group === "today") {
-      await updateTask(dragTaskId, { due_date: today, status: "open" });
+      await updateTask(dragTaskId, { ...basePayload, due_date: today, status: "open" });
     }
 
     if (group === "tomorrow") {
-      await updateTask(dragTaskId, { due_date: tomorrow, status: "open" });
+      await updateTask(dragTaskId, { ...basePayload, due_date: tomorrow, status: "open" });
     }
 
     if (group === "future") {
@@ -111,17 +174,18 @@ export default function ManagerTasksPage() {
       date.setDate(date.getDate() + 7);
 
       await updateTask(dragTaskId, {
+        ...basePayload,
         due_date: date.toISOString().slice(0, 10),
         status: "open",
       });
     }
 
     if (group === "done") {
-      await updateTask(dragTaskId, { status: "done" });
+      await updateTask(dragTaskId, { ...basePayload, status: "done" });
     }
 
     if (group === "overdue") {
-      await updateTask(dragTaskId, { due_date: today, status: "open" });
+      await updateTask(dragTaskId, { ...basePayload, due_date: today, status: "open" });
     }
 
     setDragTaskId(null);
@@ -131,7 +195,7 @@ export default function ManagerTasksPage() {
     key: TaskGroupKey,
     title: string,
     list: any[],
-    color: string
+    color: string,
   ) => {
     return (
       <div
@@ -173,6 +237,30 @@ export default function ManagerTasksPage() {
                 <div className="text-zinc-300 text-xs mt-2 line-clamp-2">
                   {task.title}
                 </div>
+
+                <div className="mt-3 border-t border-zinc-800 pt-3">
+                  <div className="text-zinc-500 text-xs mb-1">Менеджер</div>
+
+                  <select
+                    value={task.manager_id || ""}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => assignTaskToManager(task.id, e.target.value)}
+                    className="w-full bg-black border border-zinc-700 rounded-xl px-3 py-2 text-xs"
+                  >
+                    <option value="">Без менеджера</option>
+                    {managers.map((manager) => (
+                      <option key={manager.id} value={manager.id}>
+                        {manager.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {task.manager_id && (
+                    <div className="text-zinc-500 text-xs mt-2">
+                      Ответственный: {getManagerName(task.manager_id)}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -190,7 +278,31 @@ export default function ManagerTasksPage() {
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-15">
-        <h1 className="text-6xl font-black mt-8">Задачи</h1>
+        <div className="flex flex-wrap items-start justify-between gap-4 mt-8">
+          <div>
+            <h1 className="text-6xl font-black">Задачи</h1>
+
+            {currentManager && (
+              <div className="text-zinc-400 mt-3">
+                Вы вошли как:{" "}
+                <span className="text-orange-500 font-bold">
+                  {currentManager.name}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem("atlas_manager");
+              document.cookie = "atlas_manager_id=; path=/; max-age=0";
+              window.location.href = "/manager-login";
+            }}
+            className="border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl px-5 py-3 font-bold"
+          >
+            Выйти
+          </button>
+        </div>
 
         <div className="flex flex-wrap items-center gap-4 mt-8">
           <Link
@@ -241,8 +353,27 @@ export default function ManagerTasksPage() {
           </Link>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-8">
-          <div className="text-zinc-500 mt-14">
+        <div className="flex flex-wrap items-end gap-4 mt-8">
+          <div className="flex-1 min-w-[280px]">
+            <div className="text-zinc-500 mb-2">Фильтр задач</div>
+
+            <select
+              value={taskView}
+              onChange={(e) => setTaskView(e.target.value)}
+              className="w-full bg-black border border-zinc-700 rounded-xl p-4"
+            >
+              <option value="mine">Мои + без менеджера</option>
+              <option value="unassigned">Без менеджера</option>
+              <option value="all">Все задачи</option>
+              {managers.map((manager) => (
+                <option key={manager.id} value={manager.id}>
+                  {manager.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="text-zinc-500">
             Зажмите карточку задачи и перетащите её в нужный столбец.
           </div>
         </div>
@@ -253,35 +384,35 @@ export default function ManagerTasksPage() {
               "overdue",
               "Просроченные",
               groups.overdue,
-              "border-red-500 bg-red-500/10"
+              "border-red-500 bg-red-500/10",
             )}
 
             {renderColumn(
               "today",
               "Сегодня",
               groups.today,
-              "border-orange-500 bg-orange-500/10"
+              "border-orange-500 bg-orange-500/10",
             )}
 
             {renderColumn(
               "tomorrow",
               "Завтра",
               groups.tomorrow,
-              "border-blue-500 bg-blue-500/10"
+              "border-blue-500 bg-blue-500/10",
             )}
 
             {renderColumn(
               "future",
               "Будущие",
               groups.future,
-              "border-zinc-700 bg-black"
+              "border-zinc-700 bg-black",
             )}
 
             {renderColumn(
               "done",
               "Выполненные",
               groups.done,
-              "border-lime-500 bg-lime-500/10"
+              "border-lime-500 bg-lime-500/10",
             )}
           </div>
         </div>
