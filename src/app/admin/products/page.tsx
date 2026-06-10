@@ -56,7 +56,12 @@ export default async function AdminProductsPage() {
 >
   Загрузка фото
 </Link>
-
+<Link
+  href="/admin/managers"
+  className="border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
+>
+  Менеджеры
+</Link>
         </div>
 
         <AdminProductsClient
