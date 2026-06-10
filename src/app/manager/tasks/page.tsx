@@ -113,6 +113,11 @@ export default function ManagerTasksPage() {
     (offer) =>
       offer.source === "cart" && (offer.status === "new" || !offer.status),
   ).length;
+  const overdueCount = groups.overdue.length;
+
+const clientsCount = clients.length;
+
+const offersCount = offers.length;
 
   const getClient = (clientId: string) => {
     return clients.find((client) => client.id === clientId);
@@ -377,7 +382,35 @@ export default function ManagerTasksPage() {
             Зажмите карточку задачи и перетащите её в нужный столбец.
           </div>
         </div>
+<div className="grid md:grid-cols-4 gap-6 mt-8">
+  <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+    <div className="text-zinc-500">Клиентов</div>
+    <div className="text-5xl font-black text-orange-500 mt-3">
+      {clientsCount}
+    </div>
+  </div>
 
+  <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+    <div className="text-zinc-500">КП</div>
+    <div className="text-5xl font-black text-orange-500 mt-3">
+      {offersCount}
+    </div>
+  </div>
+
+  <div className="bg-zinc-900 rounded-3xl p-6 border border-zinc-800">
+    <div className="text-zinc-500">Открытых задач</div>
+    <div className="text-5xl font-black text-orange-500 mt-3">
+      {openTasksCount}
+    </div>
+  </div>
+
+  <div className="bg-zinc-900 rounded-3xl p-6 border border-red-900 bg-red-950/30">
+    <div className="text-zinc-400">Просрочено</div>
+    <div className="text-5xl font-black text-red-500 mt-3">
+      {overdueCount}
+    </div>
+  </div>
+</div>
         <div className="mt-12 overflow-x-auto pb-4">
           <div className="grid grid-cols-5 gap-5 min-w-[1300px] items-start">
             {renderColumn(
