@@ -108,31 +108,16 @@ export default function AdminManagersPage() {
             <div className="text-orange-500 uppercase tracking-[6px] text-sm">
               ATLAS FORGE CMS
             </div>
+            <Link
+  href="/admin/products"
+  className="text-zinc-400 hover:text-white transition"
+>
+  ← К товарам
+</Link>
             <h1 className="text-5xl font-black mt-4">Менеджеры</h1>
           </div>
 
-          <div className="flex flex-wrap gap-4">
-  <Link
-    href="/admin/products"
-    className="bg-orange-500 hover:bg-orange-600 transition rounded-xl px-6 py-3 font-bold"
-  >
-    Товары
-  </Link>
-
-  <Link
-    href="/admin/catalog"
-    className="border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-  >
-    Разделы каталога
-  </Link>
-
-  <Link
-    href="/admin/managers"
-    className="border border-orange-500 text-orange-500 transition rounded-xl px-6 py-3 font-bold"
-  >
-    Менеджеры
-  </Link>
-</div>
+          
         </div>
 
         <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mt-10">
