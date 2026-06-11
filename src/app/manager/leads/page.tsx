@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import ManagerTabs from "@/components/ManagerTabs";
+import ManagerHeader from "@/components/ManagerHeader";
 
 const statusOptions = [
   { value: "all", label: "Все статусы" },
@@ -291,31 +292,10 @@ const newCartLeadsCount = visibleOffersForCounter.filter(
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-15">
-        <div className="flex flex-wrap items-end justify-between gap-4 mt-8">
-          <div>
-            <h1 className="text-6xl font-black">Заявки</h1>
-
-            {currentManager && (
-              <div className="text-zinc-400 mt-3">
-                Вы вошли как:{" "}
-                <span className="text-orange-500 font-bold">
-                  {currentManager.name}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => {
-              localStorage.removeItem("atlas_manager");
-              document.cookie = "atlas_manager_id=; path=/; max-age=0";
-              window.location.href = "/manager-login";
-            }}
-            className="mt-3 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition rounded-xl px-5 py-3 font-bold"
-  >
-            Выйти
-          </button>
-        </div>
+        <ManagerHeader
+  title="Заявки"
+  currentManager={currentManager}
+/>
 
        <ManagerTabs
   active="leads"

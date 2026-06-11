@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import ManagerTabs from "@/components/ManagerTabs";
+import ManagerHeader from "@/components/ManagerHeader";
+
 
 const formatRub = (value: number) => {
   if (!value) return "0 ₽";
@@ -14,6 +16,7 @@ export default function ManagerAnalyticsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [managers, setManagers] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [currentManager, setCurrentManager] = useState<any>(null);
 
   const loadData = async () => {
     const { data: offersData } = await supabase
@@ -42,6 +45,23 @@ export default function ManagerAnalyticsPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+  const savedManager = localStorage.getItem("atlas_manager");
+
+  if (!savedManager) {
+    window.location.href = "/manager-login";
+    return;
+  }
+
+  try {
+    setCurrentManager(JSON.parse(savedManager));
+  } catch {
+    localStorage.removeItem("atlas_manager");
+    document.cookie = "atlas_manager_id=; path=/; max-age=0";
+    window.location.href = "/manager-login";
+  }
+}, []);
 
   const analytics = useMemo(() => {
   const byStatus = (status: string) =>
@@ -169,9 +189,10 @@ export default function ManagerAnalyticsPage() {
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-15">
-        <h1 className="text-6xl font-black mt-8">
-          Аналитика
-        </h1>
+        <ManagerHeader
+  title="Аналитика"
+  currentManager={currentManager}
+/>
 
         <ManagerTabs
   active="analytics"
