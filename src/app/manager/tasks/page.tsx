@@ -115,9 +115,39 @@ export default function ManagerTasksPage() {
   ).length;
   const overdueCount = groups.overdue.length;
 
-const clientsCount = clients.length;
+const dashboardClients = clients.filter((client) => {
+  if (taskView === "all") return true;
+  if (taskView === "unassigned") return !client.manager_id;
 
-const offersCount = offers.length;
+  if (taskView === "mine") {
+    return (
+      !currentManager?.id ||
+      client.manager_id === currentManager.id ||
+      !client.manager_id
+    );
+  }
+
+  return client.manager_id === taskView;
+});
+
+const dashboardOffers = offers.filter((offer) => {
+  if (taskView === "all") return true;
+  if (taskView === "unassigned") return !offer.manager_id;
+
+  if (taskView === "mine") {
+    return (
+      !currentManager?.id ||
+      offer.manager_id === currentManager.id ||
+      !offer.manager_id
+    );
+  }
+
+  return offer.manager_id === taskView;
+});
+
+const clientsCount = dashboardClients.length;
+
+const offersCount = dashboardOffers.length;
 
   const getClient = (clientId: string) => {
     return clients.find((client) => client.id === clientId);
