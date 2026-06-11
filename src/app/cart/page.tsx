@@ -136,33 +136,14 @@ const { data: managers } = await supabase
   .order("sort_order", { ascending: true });
 
 if (managers && managers.length > 0) {
-  const { data: distribution } = await supabase
-    .from("lead_distribution")
-    .select("*")
-    .eq("id", 1)
-    .single();
+  const { count } = await supabase
+    .from("commercial_offers")
+    .select("id", { count: "exact", head: true })
+    .eq("source", "cart");
 
-  let nextIndex = 0;
-
-  if (distribution?.last_manager_id) {
-    const currentIndex = managers.findIndex(
-      (m) => m.id === distribution.last_manager_id
-    );
-
-    nextIndex =
-      currentIndex >= 0
-        ? (currentIndex + 1) % managers.length
-        : 0;
-  }
+  const nextIndex = (count || 0) % managers.length;
 
   assignedManagerId = managers[nextIndex].id;
-
-  await supabase
-    .from("lead_distribution")
-    .update({
-      last_manager_id: assignedManagerId,
-    })
-    .eq("id", 1);
 }
       const clientId = await findOrCreateClient(assignedManagerId);
 
