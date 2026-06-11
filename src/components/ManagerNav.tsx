@@ -1,14 +1,5 @@
-import ManagerNav from "@/components/ManagerNav";
+import Header from "@/components/Header";
 
-export default function ManagerLayout({
-  children,
-}: {
-  children?: React.ReactNode;
-}) {
-  return (
-    <>
-      <ManagerNav />
-      <div className="pt-20">{children}</div>
-    </>
-  );
+export default function ManagerNav() {
+  return <Header />;
 }
