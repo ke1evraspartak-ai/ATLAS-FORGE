@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import ManagerTabs from "@/components/ManagerTabs";
 
 const CLIENT_STATUSES = [
   { value: "new", label: "Новый" },
@@ -585,12 +586,37 @@ const [newComment, setNewComment] = useState("");
     );
   };
 
-  const openTasksCount = tasks.filter((task) => task.status !== "done").length;
+  const visibleClientsForCounter = clients.filter((client) => {
+  if (clientView === "all") return true;
+  if (clientView === "unassigned") return !client.manager_id;
 
-  const newCartLeadsCount = offers.filter(
-    (offer) =>
-      offer.source === "cart" && (offer.status === "new" || !offer.status),
-  ).length;
+  if (clientView === "mine") {
+    return (
+      !currentManager?.id ||
+      client.manager_id === currentManager.id ||
+      !client.manager_id
+    );
+  }
+
+  return client.manager_id === clientView;
+});
+
+const visibleClientIds = visibleClientsForCounter.map((client) => client.id);
+
+const openTasksCount = tasks.filter((task) => {
+  const matchesClient = visibleClientIds.includes(task.client_id);
+  return matchesClient && task.status !== "done";
+}).length;
+
+const newCartLeadsCount = offers.filter((offer) => {
+  const matchesClient = visibleClientIds.includes(offer.client_id);
+
+  return (
+    matchesClient &&
+    offer.source === "cart" &&
+    (offer.status === "new" || !offer.status)
+  );
+}).length;
 
   return (
     <main className="bg-[#111111] text-white min-h-screen">
@@ -623,54 +649,11 @@ const [newComment, setNewComment] = useState("");
     Выйти
   </button>
 </div>
-        <div className="flex flex-wrap items-center gap-4 mt-8">
-            <Link
-                href="/manager"
-                className="bg-orange-500 hover:bg-orange-600 transition rounded-xl px-6 py-3 font-bold"
-              >
-                Конструктор КП
-              </Link>
-            
-              <Link
-                href="/manager/clients"
-                className="bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-              >
-                Клиенты CRM
-              </Link>
-            
-              <Link
-                href="/manager/tasks"
-                className="relative bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-              >
-                Задачи
-
-                {openTasksCount > 0 && (
-                  <span className="absolute -top-3 -right-3 bg-red-500 text-white text-xs min-w-6 h-6 px-2 rounded-full flex items-center justify-center">
-                    {openTasksCount}
-                  </span>
-                )}
-              </Link>
-            
-              <Link
-                href="/manager/leads"
-                className="relative bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-              >
-                Заявки
-
-                {newCartLeadsCount > 0 && (
-                  <span className="absolute -top-3 -right-3 bg-green-500 text-black text-xs min-w-6 h-6 px-2 rounded-full flex items-center justify-center font-black">
-                    {newCartLeadsCount}
-                  </span>
-                )}
-              </Link>
-              <Link
-  href="/manager/analytics"
-  className="bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
->
-  Аналитика
-</Link>
-            
-          </div>
+        <ManagerTabs
+  active="clients"
+  tasksCount={openTasksCount}
+  leadsCount={newCartLeadsCount}
+/>
 
         </div>
 

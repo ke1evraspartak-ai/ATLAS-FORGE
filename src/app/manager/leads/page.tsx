@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import ManagerTabs from "@/components/ManagerTabs";
 
 const statusOptions = [
   { value: "all", label: "Все статусы" },
@@ -137,10 +138,30 @@ export default function ManagerLeadsPage() {
     loadData();
   }, []);
 
-  const newCartLeadsCount = offers.filter(
-    (offer) =>
-      offer.source === "cart" && (offer.status === "new" || !offer.status),
-  ).length;
+  const visibleOffersForCounter = offers.filter((offer) => {
+  if (managerFilter === "mine") {
+    return (
+      !currentManager?.id ||
+      offer.manager_id === currentManager.id ||
+      !offer.manager_id
+    );
+  }
+
+  if (managerFilter === "unassigned") {
+    return !offer.manager_id;
+  }
+
+  if (managerFilter === "all") {
+    return true;
+  }
+
+  return offer.manager_id === managerFilter;
+});
+
+const newCartLeadsCount = visibleOffersForCounter.filter(
+  (offer) =>
+    offer.source === "cart" && (offer.status === "new" || !offer.status),
+).length;
 
   const openTasksCount = tasks.filter((task) => task.status !== "done").length;
 
@@ -296,54 +317,11 @@ export default function ManagerLeadsPage() {
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-8">
-          <Link
-            href="/manager"
-            className="bg-orange-500 hover:bg-orange-600 transition rounded-xl px-6 py-3 font-bold"
-          >
-            Конструктор КП
-          </Link>
-
-          <Link
-            href="/manager/clients"
-            className="bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-          >
-            Клиенты CRM
-          </Link>
-
-          <Link
-            href="/manager/tasks"
-            className="relative bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-          >
-            Задачи
-
-            {openTasksCount > 0 && (
-              <span className="absolute -top-3 -right-3 bg-red-500 text-white text-xs min-w-6 h-6 px-2 rounded-full flex items-center justify-center">
-                {openTasksCount}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/manager/leads"
-            className="relative bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-          >
-            Заявки
-
-            {newCartLeadsCount > 0 && (
-              <span className="absolute -top-3 -right-3 bg-green-500 text-black text-xs min-w-6 h-6 px-2 rounded-full flex items-center justify-center font-black">
-                {newCartLeadsCount}
-              </span>
-            )}
-          </Link>
-
-          <Link
-            href="/manager/analytics"
-            className="bg-zinc-900 border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
-          >
-            Аналитика
-          </Link>
-        </div>
+       <ManagerTabs
+  active="leads"
+  tasksCount={openTasksCount}
+  leadsCount={newCartLeadsCount}
+/>
 
         <div className="mt-10 bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
