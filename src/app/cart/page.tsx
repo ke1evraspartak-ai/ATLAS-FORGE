@@ -52,7 +52,7 @@ export default function CartPage() {
     return sum + getItemPrice(item) * item.quantity;
   }, 0);
 
-  const findOrCreateClient = async () => {
+  const findOrCreateClient = async (assignedManagerId: string | null) => {
     const phoneClean = normalizePhone(clientPhone);
 
     const { data: existingClients, error: searchError } = await supabase
@@ -71,10 +71,11 @@ export default function CartPage() {
       await supabase
         .from("clients")
         .update({
-          name: clientName,
-          city,
-          object_name: objectName,
-        })
+  name: clientName,
+  city,
+  object_name: objectName,
+  manager_id: assignedManagerId,
+})
         .eq("id", existingClient.id);
 
       return existingClient.id;
@@ -163,7 +164,7 @@ if (managers && managers.length > 0) {
     })
     .eq("id", 1);
 }
-      const clientId = await findOrCreateClient();
+      const clientId = await findOrCreateClient(assignedManagerId);
 
       const { data: offer, error } = await supabase
         .from("commercial_offers")
