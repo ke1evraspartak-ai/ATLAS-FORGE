@@ -212,19 +212,33 @@ export default function ManagerLeadsPage() {
     loadData();
   };
 
-  const updateOfferManager = async (offerId: string, managerId: string) => {
-    const { error } = await supabase
-      .from("commercial_offers")
-      .update({ manager_id: managerId || null })
-      .eq("id", offerId);
+  const updateOfferManager = async (offer: any, managerId: string) => {
+  const normalizedManagerId = managerId || null;
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
+  const { error } = await supabase
+    .from("commercial_offers")
+    .update({ manager_id: normalizedManagerId })
+    .eq("id", offer.id);
 
-    loadData();
-  };
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  if (offer.client_id) {
+    await supabase
+      .from("clients")
+      .update({ manager_id: normalizedManagerId })
+      .eq("id", offer.client_id);
+
+    await supabase
+      .from("client_tasks")
+      .update({ manager_id: normalizedManagerId })
+      .eq("client_id", offer.client_id);
+  }
+
+  loadData();
+};
 
   const deleteOffer = async (id: string) => {
     if (!confirm("Удалить заявку? Это действие нельзя отменить.")) return;
@@ -443,7 +457,7 @@ export default function ManagerLeadsPage() {
                     <td className="p-4">
                       <select
                         value={offer.manager_id || ""}
-                        onChange={(e) => updateOfferManager(offer.id, e.target.value)}
+                        onChange={(e) => updateOfferManager(offer, e.target.value)}
                         className="bg-black border border-zinc-700 rounded-lg px-3 py-2"
                       >
                         <option value="">Без менеджера</option>

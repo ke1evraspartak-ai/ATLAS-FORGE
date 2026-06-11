@@ -641,17 +641,29 @@ if (clientId) {
   today.setDate(today.getDate() + 3);
 
   await supabase.from("client_tasks").insert({
-    client_id: clientId,
-    title: `Контроль КП ${offerNumber}`,
-    due_date: today.toISOString().slice(0, 10),
-    status: "offer",
-  });
+  client_id: clientId,
+  title: `Контроль КП ${offerNumber}`,
+  due_date: today.toISOString().slice(0, 10),
+  status: "offer",
+  manager_id: managerId || null,
+});
 
   await supabase.from("client_history").insert({
     client_id: clientId,
     event_type: "task",
     description: `Автоматически создана задача по КП ${offerNumber}`,
   });
+}
+if (clientId && managerId) {
+  await supabase
+    .from("clients")
+    .update({ manager_id: managerId })
+    .eq("id", clientId);
+
+  await supabase
+    .from("client_tasks")
+    .update({ manager_id: managerId })
+    .eq("client_id", clientId);
 }
     alert(`КП ${offerNumber} сохранено`);
     loadData();
