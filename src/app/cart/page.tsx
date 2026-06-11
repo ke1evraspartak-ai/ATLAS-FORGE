@@ -88,6 +88,7 @@ export default function CartPage() {
         city,
         object_name: objectName,
         status: "new",
+        manager_id: assignedManagerId,
       })
       .select()
       .single();
@@ -125,6 +126,43 @@ export default function CartPage() {
 
       const offerNumber = createOfferNumber();
       const publicToken = createPublicToken();
+      let assignedManagerId: string | null = null;
+
+const { data: managers } = await supabase
+  .from("managers")
+  .select("*")
+  .eq("is_active", true)
+  .order("sort_order", { ascending: true });
+
+if (managers && managers.length > 0) {
+  const { data: distribution } = await supabase
+    .from("lead_distribution")
+    .select("*")
+    .eq("id", 1)
+    .single();
+
+  let nextIndex = 0;
+
+  if (distribution?.last_manager_id) {
+    const currentIndex = managers.findIndex(
+      (m) => m.id === distribution.last_manager_id
+    );
+
+    nextIndex =
+      currentIndex >= 0
+        ? (currentIndex + 1) % managers.length
+        : 0;
+  }
+
+  assignedManagerId = managers[nextIndex].id;
+
+  await supabase
+    .from("lead_distribution")
+    .update({
+      last_manager_id: assignedManagerId,
+    })
+    .eq("id", 1);
+}
       const clientId = await findOrCreateClient();
 
       const { data: offer, error } = await supabase
@@ -139,7 +177,8 @@ export default function CartPage() {
           object_name: objectName,
           source: "cart",
           status: "new",
-          show_prices: true,
+manager_id: assignedManagerId,
+show_prices: true,
         })
         .select()
         .single();
