@@ -19,7 +19,12 @@ export default async function CatalogPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 mt-16">
-          {sections?.map((section) => (
+          {sections
+  ?.filter(
+    (section) =>
+      !String(section.title || "").toLowerCase().includes("v-sport")
+  )
+  .map((section) => (
             <Link
               key={section.id}
               href={`/catalog/sections/${section.slug}`}

@@ -23,8 +23,7 @@ export default function Header() {
           <Link href="/catalog" className="text-zinc-300 hover:text-orange-500 transition">Каталог</Link>
           <Link href="/about" className="text-zinc-300 hover:text-orange-500 transition">О бренде</Link>
           <Link href="/projects" className="text-zinc-300 hover:text-orange-500 transition">Проекты</Link>
-          <Link href="/dealers" className="text-zinc-300 hover:text-orange-500 transition">Дилерам</Link>
-          <Link href="/contacts" className="text-zinc-300 hover:text-orange-500 transition">Контакты</Link>
+                    <Link href="/contacts" className="text-zinc-300 hover:text-orange-500 transition">Контакты</Link>
         </nav>
 
         <div className="hidden md:flex items-center gap-10 shrink-0">
