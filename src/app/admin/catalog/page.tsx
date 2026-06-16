@@ -353,7 +353,28 @@ const makeSlug = (value: string) => {
   Сохранить
 </button>
                   </div>
+<div className="mt-4">
+  <label className="flex items-center gap-3 cursor-pointer">
+    <input
+      type="checkbox"
+      checked={section.is_hidden || false}
+      onChange={async (e) => {
+        await supabase
+          .from("catalog_sections")
+          .update({
+            is_hidden: e.target.checked,
+          })
+          .eq("id", section.id);
 
+        loadData();
+      }}
+    />
+
+    <span className="text-sm text-zinc-300">
+      Скрыть раздел на сайте
+    </span>
+  </label>
+</div>
                   <label className="inline-block mt-4 border border-zinc-700 hover:border-orange-500 transition px-4 py-2 rounded-xl cursor-pointer">
                     Заменить фото
                     <input
