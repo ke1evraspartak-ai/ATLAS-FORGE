@@ -141,11 +141,8 @@ export default async function SectionPage({
   </div>
 
   <div className="space-y-3">
-    {sections
-  ?.filter(
-    (item) =>
-      !String(item.title || "").toLowerCase().includes("v-sport")
-  )
+   {sections
+  ?.filter((item) => !item.is_hidden)
   .map((item) => {
     const active = item.slug === section.slug;
 
