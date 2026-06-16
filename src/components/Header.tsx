@@ -9,7 +9,7 @@ export default function Header() {
       <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between gap-6">
         <Link href="/" className="shrink-0 flex items-center">
           <Image
-            src="/logo-atlas-forge.png"
+            src="/logo-atlas-forge-new.png"
             alt="ATLAS FORGE"
             width={220}
             height={70}
