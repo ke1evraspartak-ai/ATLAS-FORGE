@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AdminProductsClient from "@/components/AdminProductsClient";
+import AdminHeader from "@/components/AdminHeader";
 
 export default async function AdminProductsPage() {
   const { data: products } = await supabase
@@ -21,6 +22,7 @@ export default async function AdminProductsPage() {
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-20">
+         <AdminHeader />
         <h1 className="text-5xl font-black">Товары</h1>
 
         <div className="flex flex-wrap items-center gap-4 mt-8 mb-10">

@@ -9,7 +9,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
 
   const signIn = async () => {
-    if (!login || !password) {
+    if (!login.trim() || !password.trim()) {
       alert("Введите логин и пароль");
       return;
     }
@@ -19,8 +19,8 @@ export default function AdminLoginPage() {
     const { data, error } = await supabase
       .from("admins")
       .select("*")
-      .eq("login", login)
-      .eq("password", password)
+      .eq("login", login.trim())
+      .eq("password", password.trim())
       .eq("is_active", true)
       .single();
 
@@ -32,7 +32,6 @@ export default function AdminLoginPage() {
     }
 
     localStorage.setItem("atlas_admin", JSON.stringify(data));
-
     document.cookie = `atlas_admin_id=${data.id}; path=/; max-age=31536000`;
 
     window.location.href = "/admin/products";
@@ -64,7 +63,7 @@ export default function AdminLoginPage() {
           <button
             onClick={signIn}
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl py-3 disabled:opacity-50"
           >
             {loading ? "Вход..." : "Войти"}
           </button>
