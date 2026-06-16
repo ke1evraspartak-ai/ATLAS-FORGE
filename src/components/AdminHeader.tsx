@@ -2,7 +2,7 @@
 
 export default function AdminHeader() {
   return (
-    <div className="flex justify-end mb-6">
+    <div className="flex justify-end">
       <button
         onClick={() => {
           localStorage.removeItem("atlas_admin");

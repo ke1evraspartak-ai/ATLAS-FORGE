@@ -22,7 +22,6 @@ export default async function AdminProductsPage() {
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-[1800px] mx-auto px-6 py-20">
-         <AdminHeader />
         <h1 className="text-5xl font-black">Товары</h1>
 
         <div className="flex flex-wrap items-center gap-4 mt-8 mb-10">
@@ -39,12 +38,13 @@ export default async function AdminProductsPage() {
           >
             Импорт Excel
           </Link>
+
           <Link
-  href="/admin/products/import-vsport"
-  className="bg-blue-600 hover:bg-blue-700 transition px-6 py-3 rounded-xl font-bold"
->
-  Импорт V-Sport
-</Link>
+            href="/admin/products/import-vsport"
+            className="bg-blue-600 hover:bg-blue-700 transition px-6 py-3 rounded-xl font-bold"
+          >
+            Импорт V-Sport
+          </Link>
 
           <Link
             href="/admin/catalog"
@@ -52,18 +52,24 @@ export default async function AdminProductsPage() {
           >
             Разделы каталога
           </Link>
-<Link
-  href="/admin/products/photos"
-  className="border border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white transition px-6 py-3 rounded-xl font-bold"
->
-  Загрузка фото
-</Link>
-<Link
-  href="/admin/managers"
-  className="border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
->
-  Менеджеры
-</Link>
+
+          <Link
+            href="/admin/products/photos"
+            className="border border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white transition px-6 py-3 rounded-xl font-bold"
+          >
+            Загрузка фото
+          </Link>
+
+          <Link
+            href="/admin/managers"
+            className="border border-zinc-700 hover:border-orange-500 transition rounded-xl px-6 py-3 font-bold"
+          >
+            Менеджеры
+          </Link>
+
+          <div className="ml-auto">
+            <AdminHeader />
+          </div>
         </div>
 
         <AdminProductsClient
