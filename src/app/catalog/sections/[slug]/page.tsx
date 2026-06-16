@@ -141,10 +141,15 @@ export default async function SectionPage({
   </div>
 
   <div className="space-y-3">
-    {sections?.map((item) => {
-      const active = item.slug === section.slug;
+    {sections
+  ?.filter(
+    (item) =>
+      !String(item.title || "").toLowerCase().includes("v-sport")
+  )
+  .map((item) => {
+    const active = item.slug === section.slug;
 
-      return (
+    return (
         <div key={item.id}>
           <Link
             href={`/catalog/sections/${item.slug}`}
