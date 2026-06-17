@@ -7,9 +7,13 @@ export default async function CatalogPage() {
     .select("*")
     .order("sort_order");
 
-  const visibleSections = (sections || []).filter(
-    (section) => section.is_hidden !== true
+ const visibleSections = (sections || []).filter((section) => {
+  return (
+    section.is_hidden !== true &&
+    section.is_hidden !== "true" &&
+    section.is_hidden !== 1
   );
+});
 
   return (
     <main className="bg-[#111111] text-white min-h-screen">
@@ -21,6 +25,10 @@ export default async function CatalogPage() {
         <p className="text-zinc-400 text-xl mt-6 max-w-3xl">
           Выберите раздел профессионального оборудования ATLAS FORGE.
         </p>
+
+        <p className="text-zinc-600 text-sm mt-4">
+  Видимых разделов: {visibleSections.length}
+</p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 mt-16">
           {visibleSections.map((section) => (
