@@ -142,7 +142,7 @@ export default async function SectionPage({
 
   <div className="space-y-3">
    {sections
-  ?.filter((item) => !item.is_hidden)
+  ?.filter((item) => item.is_hidden !== true)
   .map((item) => {
     const active = item.slug === section.slug;
 

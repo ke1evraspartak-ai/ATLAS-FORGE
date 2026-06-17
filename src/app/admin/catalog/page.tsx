@@ -353,27 +353,55 @@ const makeSlug = (value: string) => {
   Сохранить
 </button>
                   </div>
-<div className="mt-4">
-  <label className="flex items-center gap-3 cursor-pointer">
-    <input
-      type="checkbox"
-      checked={section.is_hidden || false}
-      onChange={async (e) => {
-        await supabase
-          .from("catalog_sections")
-          .update({
-            is_hidden: e.target.checked,
-          })
-          .eq("id", section.id);
+<div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-zinc-800 bg-black px-4 py-3">
+  <div>
+    <div className="text-sm font-bold">
+      {section.is_hidden ? "Раздел скрыт на сайте" : "Раздел виден на сайте"}
+    </div>
 
+    <div className="text-xs text-zinc-500 mt-1">
+      Управляет отображением в публичном каталоге
+    </div>
+  </div>
+
+  <button
+    onClick={async () => {
+      const nextHidden = section.is_hidden === true ? false : true;
+
+      setSections((prev) =>
+        prev.map((item) =>
+          item.id === section.id
+            ? {
+                ...item,
+                is_hidden: nextHidden,
+              }
+            : item
+        )
+      );
+
+      const { error } = await supabase
+        .from("catalog_sections")
+        .update({
+          is_hidden: nextHidden,
+        })
+        .eq("id", section.id);
+
+      if (error) {
+        alert(error.message);
         loadData();
-      }}
-    />
+        return;
+      }
 
-    <span className="text-sm text-zinc-300">
-      Скрыть раздел на сайте
-    </span>
-  </label>
+      loadData();
+    }}
+    className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
+      section.is_hidden
+        ? "bg-green-600 hover:bg-green-700 text-white"
+        : "border border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+    }`}
+  >
+    {section.is_hidden ? "Показать" : "Скрыть"}
+  </button>
 </div>
                   <label className="inline-block mt-4 border border-zinc-700 hover:border-orange-500 transition px-4 py-2 rounded-xl cursor-pointer">
                     Заменить фото
