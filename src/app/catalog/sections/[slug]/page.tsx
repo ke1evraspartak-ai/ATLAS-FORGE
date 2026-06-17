@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import AddToCartButton from "@/components/AddToCartButton";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 const cleanNumber = (value: string) => {
   return Number(String(value || "").replace(/\D/g, ""));
