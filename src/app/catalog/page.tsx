@@ -7,6 +7,10 @@ export default async function CatalogPage() {
     .select("*")
     .order("sort_order");
 
+  const visibleSections = (sections || []).filter(
+    (section) => section.is_hidden !== true
+  );
+
   return (
     <main className="bg-[#111111] text-white min-h-screen">
       <div className="max-w-7xl mx-auto px-6 py-32">
@@ -19,9 +23,7 @@ export default async function CatalogPage() {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6 mt-16">
-          {sections
-  ?.filter((section) => !section.is_hidden)
-  .map((section) => (
+          {visibleSections.map((section) => (
             <Link
               key={section.id}
               href={`/catalog/sections/${section.slug}`}
